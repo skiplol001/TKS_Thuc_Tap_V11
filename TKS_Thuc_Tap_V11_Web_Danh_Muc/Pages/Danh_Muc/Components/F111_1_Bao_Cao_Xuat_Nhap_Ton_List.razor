@@ -1,0 +1,101 @@
+﻿@inherits FBase;
+
+@using TKS_Thuc_Tap_V11_Data_Access.Controller.Log
+@using TKS_Thuc_Tap_V11_Data_Access.Entity.Log
+
+<div class="row" style="padding-top: 10px;">
+    <div class="col-lg-12">
+        @((MarkupString)r_strError)
+
+        @* ===== FILTER BAR ===== *@
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="row g-3 align-items-end">
+                    <div class="col-lg-3">
+                        <label class="form-label">@Get_Language_Data_Field("Từ ngày"):</label>
+                        <TelerikDatePicker @bind-Value="@m_dtmFrom"
+                                           Format="dd/MM/yyyy"
+                                           Width="100%">
+                        </TelerikDatePicker>
+                    </div>
+                    <div class="col-lg-3">
+                        <label class="form-label">@Get_Language_Data_Field("Đến ngày"):</label>
+                        <TelerikDatePicker @bind-Value="@m_dtmTo"
+                                           Format="dd/MM/yyyy"
+                                           Width="100%">
+                        </TelerikDatePicker>
+                    </div>
+                    <div class="col-lg-3">
+                        <button type="button" class="btn btn-primary" @onclick="Tim_Kiem">
+                            <i class="mdi mdi-magnify"></i> @Get_Language_Data_Field("Tìm kiếm")
+                        </button>
+                    </div>
+                    <div class="col-lg-3 text-end">
+                        <span><strong>@Get_Language_Data_Field("Số sản phẩm"): @v_arrData.Count</strong></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @* ===== GRID KẾT QUẢ ===== *@
+        <TelerikGrid Data="@v_arrData" Height="calc(100vh - 300px)"
+                     Resizable="true" Reorderable="true" Pageable="true" @ref="@grdData">
+            <GridExport>
+                <GridExcelExport FileName="Bao_Cao_Xuat_Nhap_Ton" AllPages="true" />
+                <GridCsvExport FileName="Bao_Cao_Xuat_Nhap_Ton" AllPages="true" />
+            </GridExport>
+            <GridColumns>
+                <GridColumn Field="Ma_San_Pham" Title="Mã sản phẩm" Width="120px"></GridColumn>
+                <GridColumn Field="Ten_San_Pham" Title="Tên sản phẩm" Width="300px"></GridColumn>
+                <GridColumn Field="SL_Dau_Ky" Title="SL Đầu Kỳ" Width="130px">
+                    <Template>
+                        @((context as CBao_Cao_Xuat_Nhap_Ton).SL_Dau_Ky.ToString("N2"))
+                    </Template>
+                </GridColumn>
+                <GridColumn Field="SL_Nhap" Title="SL Nhập" Width="130px">
+                    <Template>
+                        @((context as CBao_Cao_Xuat_Nhap_Ton).SL_Nhap.ToString("N2"))
+                    </Template>
+                </GridColumn>
+                <GridColumn Field="SL_Xuat" Title="SL Xuất" Width="130px">
+                    <Template>
+                        @((context as CBao_Cao_Xuat_Nhap_Ton).SL_Xuat.ToString("N2"))
+                    </Template>
+                </GridColumn>
+                <GridColumn Field="SL_Cuoi_Ky" Title="SL Cuối Kỳ" Width="130px">
+                    <Template>
+                        @{
+                            var v_objItem = context as CBao_Cao_Xuat_Nhap_Ton;
+                            var v_color = v_objItem.SL_Cuoi_Ky < 0 ? "red" : "inherit";
+                        }
+                        <span style="color:@v_color; font-weight: bold;">
+                            @v_objItem.SL_Cuoi_Ky.ToString("N2")
+                        </span>
+                    </Template>
+                </GridColumn>
+            </GridColumns>
+        </TelerikGrid>
+    </div>
+</div>
+
+@code {
+    public List<CBao_Cao_Xuat_Nhap_Ton> v_arrData = new();
+    TelerikGrid<CBao_Cao_Xuat_Nhap_Ton> grdData = new();
+
+    private DateTime? m_dtmFrom = DateTime.Today.AddDays(-30);
+    private DateTime? m_dtmTo = DateTime.Today;
+
+    protected override void Init_Data() { }
+
+    protected override void Load_Data()
+    {
+        CBao_Cao_Xuat_Nhap_Ton_Controller v_objCtrData = new();
+        v_arrData = v_objCtrData.FQ_111_BCXNT_sp_sel_List_By_Date(m_dtmFrom, m_dtmTo);
+    }
+
+    private void Tim_Kiem()
+    {
+        Load_Data();
+        StateHasChanged();
+    }
+}

@@ -1,0 +1,96 @@
+﻿@inherits FBase;
+
+@using TKS_Thuc_Tap_V11_Data_Access.Controller.Log
+@using TKS_Thuc_Tap_V11_Data_Access.Entity.Log
+
+<div class="row" style="padding-top: 10px;">
+    <div class="col-lg-12">
+        @((MarkupString)r_strError)
+
+        @* ===== FILTER BAR ===== *@
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="row g-3 align-items-end">
+                    <div class="col-lg-3">
+                        <label class="form-label">@Get_Language_Data_Field("Từ ngày"):</label>
+                        <TelerikDatePicker @bind-Value="@m_dtmFrom"
+                                           Format="dd/MM/yyyy"
+                                           Width="100%">
+                        </TelerikDatePicker>
+                    </div>
+                    <div class="col-lg-3">
+                        <label class="form-label">@Get_Language_Data_Field("Đến ngày"):</label>
+                        <TelerikDatePicker @bind-Value="@m_dtmTo"
+                                           Format="dd/MM/yyyy"
+                                           Width="100%">
+                        </TelerikDatePicker>
+                    </div>
+                    <div class="col-lg-3">
+                        <button type="button" class="btn btn-primary" @onclick="Tim_Kiem">
+                            <i class="mdi mdi-magnify"></i> @Get_Language_Data_Field("Tìm kiếm")
+                        </button>
+                    </div>
+                    <div class="col-lg-3 text-end">
+                        <span><strong>@Get_Language_Data_Field("Tổng cộng"): @v_arrData.Sum(x => x.Tri_Gia).ToString("N0")</strong></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @* ===== GRID KẾT QUẢ ===== *@
+        <TelerikGrid Data="@v_arrData" Height="calc(100vh - 300px)"
+                     Resizable="true" Reorderable="true" Pageable="true" @ref="@grdData">
+            <GridExport>
+                <GridExcelExport FileName="Bao_Cao_Nhap_Kho" AllPages="true" />
+                <GridCsvExport FileName="Bao_Cao_Nhap_Kho" AllPages="true" />
+            </GridExport>
+            <GridColumns>
+                <GridColumn Field="Ngay_Nhap_Kho" Title="Ngày nhập" Width="120px">
+                    <Template>
+                        @((context as CBao_Cao_Nhap_Kho).Ngay_Nhap_Kho?.ToString("dd/MM/yyyy"))
+                    </Template>
+                </GridColumn>
+                <GridColumn Field="So_Phieu_Nhap_Kho" Title="Số phiếu nhập" Width="150px"></GridColumn>
+                <GridColumn Field="Ma_San_Pham" Title="Mã sản phẩm" Width="120px"></GridColumn>
+                <GridColumn Field="Ten_San_Pham" Title="Tên sản phẩm" Width="300px"></GridColumn>
+                <GridColumn Field="SL_Nhap" Title="SL nhập" Width="120px">
+                    <Template>
+                        @((context as CBao_Cao_Nhap_Kho).SL_Nhap.ToString("N2"))
+                    </Template>
+                </GridColumn>
+                <GridColumn Field="Don_Gia_Nhap" Title="Đơn giá" Width="150px">
+                    <Template>
+                        @((context as CBao_Cao_Nhap_Kho).Don_Gia_Nhap.ToString("N0"))
+                    </Template>
+                </GridColumn>
+                <GridColumn Field="Tri_Gia" Title="Trị giá" Width="150px">
+                    <Template>
+                        @((context as CBao_Cao_Nhap_Kho).Tri_Gia.ToString("N0"))
+                    </Template>
+                </GridColumn>
+            </GridColumns>
+        </TelerikGrid>
+    </div>
+</div>
+
+@code {
+    public List<CBao_Cao_Nhap_Kho> v_arrData = new();
+    TelerikGrid<CBao_Cao_Nhap_Kho> grdData = new();
+
+    private DateTime? m_dtmFrom = DateTime.Today.AddDays(-30);
+    private DateTime? m_dtmTo = DateTime.Today;
+
+    protected override void Init_Data() { }
+
+    protected override void Load_Data()
+    {
+        CBao_Cao_Nhap_Kho_Controller v_objCtrData = new();
+        v_arrData = v_objCtrData.FQ_109_BCNK_sp_sel_List_By_Date(m_dtmFrom, m_dtmTo);
+    }
+
+    private void Tim_Kiem()
+    {
+        Load_Data();
+        StateHasChanged();
+    }
+}

@@ -1,0 +1,80 @@
+﻿@inherits FBase;
+
+<div class="modal fade show" tabindex="-1" role="dialog" aria-hidden="true" style="display: block; padding-left: 0px; background-color: rgba(10, 10, 10, .8);">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title">@Get_Language_Data_Field("Thông tin chi tiết")</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @onclick="@(()=> Modal_Cancel())">
+                </button>
+            </div>
+
+            <div class="modal-body">
+                @if (m_objData != null)
+                {
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <div class="row mb-3">
+                                <div class="col-lg-11">
+                                    <label class="form-label">@Get_Language_Data_Field("Mã sản phẩm"):</label>
+                                    <p><strong>@m_objData.Ma_San_Pham</strong></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="row mb-3">
+                                <div class="col-lg-11">
+                                    <label class="form-label">@Get_Language_Data_Field("Tên sản phẩm"):</label>
+                                    <p><strong>@m_objData.Ten_San_Pham</strong></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="row mb-3">
+                                <div class="col-lg-11">
+                                    <label class="form-label">@Get_Language_Data_Field("Loại sản phẩm"):</label>
+                                    <p>@m_objData.Ten_LSP</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="row mb-3">
+                                <div class="col-lg-11">
+                                    <label class="form-label">@Get_Language_Data_Field("Đơn vị tính"):</label>
+                                    <p>@m_objData.Ten_Don_Vi_Tinh</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-12">
+                            <div class="row mb-3">
+                                <div class="col-lg-11">
+                                    <label class="form-label">@Get_Language_Data_Field("Ghi chú"):</label>
+                                    <p>@m_objData.Ghi_Chu</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" @onclick="@(()=> Modal_Cancel())">
+                    @Get_Language_Data_Field("Đóng")
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private CDM_San_Pham m_objData = new();
+
+    protected override void Init_Data() { }
+
+    protected override void Load_Data()
+    {
+        CDM_San_Pham_Controller v_objCtrData = new();
+        m_objData = v_objCtrData.FQ_103_SP_sp_sel_Get_By_ID(r_iAuto_ID);
+        if (m_objData == null) m_objData = new CDM_San_Pham();
+    }
+}

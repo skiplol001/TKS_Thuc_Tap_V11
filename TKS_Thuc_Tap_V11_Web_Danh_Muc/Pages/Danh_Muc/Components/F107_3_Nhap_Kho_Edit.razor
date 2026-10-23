@@ -1,0 +1,262 @@
+﻿@inherits FBase;
+
+<div class="modal fade show" tabindex="-1" role="dialog" aria-hidden="true" style="display: block; padding-left: 0px; background-color: rgba(10, 10, 10, .8);">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                @if (r_iAuto_ID != 0)
+                {
+                    <h5 class="modal-title">@Get_Language_Data_Field("Hiệu chỉnh phiếu nhập kho")</h5>
+                }
+                else
+                {
+                    <h5 class="modal-title">@Get_Language_Data_Field("Thêm mới phiếu nhập kho")</h5>
+                }
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @onclick="@(() => Modal_Cancel())">
+                </button>
+            </div>
+
+            @((MarkupString)r_strError)
+
+            <div class="modal-body">
+                @* ===== HEADER ===== *@
+                <div class="row mb-3">
+                    <div class="col-lg-3">
+                        <label class="form-label">@Get_Language_Data_Field("Số phiếu nhập"): <span style="color:red;">*</span></label>
+                        <input @ref="txtFocus" @bind="@m_objMaster.So_Phieu_Nhap_Kho" class="form-control">
+                    </div>
+                    <div class="col-lg-3">
+                        <label class="form-label">@Get_Language_Data_Field("Kho"): <span style="color:red;">*</span></label>
+                        <TelerikComboBox Data="@v_arrKho"
+                                         @bind-Value="@m_objMaster.Kho_ID"
+                                         TextField="Ten_Kho"
+                                         ValueField="Auto_ID"
+                                         Placeholder="Chọn kho..."
+                                         Width="100%">
+                        </TelerikComboBox>
+                    </div>
+                    <div class="col-lg-3">
+                        <label class="form-label">@Get_Language_Data_Field("Ngày nhập kho"): <span style="color:red;">*</span></label>
+                        <TelerikDatePicker @bind-Value="@m_objMaster.Ngay_Nhap_Kho"
+                                           Format="dd/MM/yyyy"
+                                           Width="100%">
+                        </TelerikDatePicker>
+                    </div>
+                    <div class="col-lg-3">
+                        <label class="form-label">@Get_Language_Data_Field("Ghi chú"):</label>
+                        <input @bind="@m_objMaster.Ghi_Chu" class="form-control">
+                    </div>
+                </div>
+
+                @* ===== DETAIL HEADER ===== *@
+                <div class="row mb-2">
+                    <div class="col-lg-6">
+                        <h6>@Get_Language_Data_Field("Chi tiết hàng nhập"):</h6>
+                    </div>
+                    <div class="col-lg-6 text-end">
+                        <button type="button" class="btn btn-sm btn-success" @onclick="Them_Dong_Chi_Tiet">
+                            <i class="mdi mdi-plus"></i> @Get_Language_Data_Field("Thêm dòng")
+                        </button>
+                    </div>
+                </div>
+
+                @* ===== DETAIL TABLE ===== *@
+                <div style="max-height: 350px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 4px;">
+                    <table class="table table-bordered table-sm mb-0">
+                        <thead class="table-light" style="position: sticky; top: 0; z-index: 1;">
+                            <tr>
+                                <th style="width: 50px;">STT</th>
+                                <th style="width: 350px;">@Get_Language_Data_Field("Sản phẩm") <span style="color:red;">*</span></th>
+                                <th style="width: 130px;">@Get_Language_Data_Field("Số lượng") <span style="color:red;">*</span></th>
+                                <th style="width: 150px;">@Get_Language_Data_Field("Đơn giá") <span style="color:red;">*</span></th>
+                                <th style="width: 150px;">@Get_Language_Data_Field("Trị giá")</th>
+                                <th style="width: 80px;">@Get_Language_Data_Field("Xóa")</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (v_arrDetail.Count == 0)
+                            {
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted">
+                                        @Get_Language_Data_Field("Chưa có dòng chi tiết. Bấm 'Thêm dòng' để thêm.")
+                                    </td>
+                                </tr>
+                            }
+                            else
+                            {
+                                @for (int i = 0; i < v_arrDetail.Count; i++)
+                                {
+                                    var v_objItem = v_arrDetail[i];
+                                    var v_iIndex = i;
+
+                                    <tr>
+                                        <td class="text-center">@(v_iIndex + 1)</td>
+                                        <td>
+                                            <TelerikComboBox Data="@v_arrSan_Pham"
+                                                             @bind-Value="@v_objItem.San_Pham_ID"
+                                                             TextField="Ten_San_Pham"
+                                                             ValueField="Auto_ID"
+                                                             Placeholder="Chọn sản phẩm..."
+                                                             Width="100%">
+                                            </TelerikComboBox>
+                                        </td>
+                                        <td>
+                                            <TelerikNumericTextBox @bind-Value="@v_objItem.SL_Nhap"
+                                                                   Format="N2"
+                                                                   Width="100%">
+                                            </TelerikNumericTextBox>
+                                        </td>
+                                        <td>
+                                            <TelerikNumericTextBox @bind-Value="@v_objItem.Don_Gia_Nhap"
+                                                                   Format="N0"
+                                                                   Width="100%">
+                                            </TelerikNumericTextBox>
+                                        </td>
+                                        <td class="text-end">
+                                            <span>@((v_objItem.SL_Nhap * v_objItem.Don_Gia_Nhap).ToString("N0"))</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <button type="button" class="btn btn-sm btn-danger" @onclick="@(() => Xoa_Dong_Chi_Tiet(v_iIndex))">
+                                                <i class="mdi mdi-delete"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                        @if (v_arrDetail.Count > 0)
+                        {
+                            <tfoot class="table-secondary">
+                                <tr>
+                                    <td colspan="4" class="text-end"><strong>@Get_Language_Data_Field("Tổng cộng"):</strong></td>
+                                    <td class="text-end"><strong>@v_arrDetail.Sum(x => x.SL_Nhap * x.Don_Gia_Nhap).ToString("N0")</strong></td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        }
+                    </table>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" @onclick="Save_Data" style="margin-right: 37px;">
+                    <i class="mdi mdi-content-save"></i> @Get_Language_Data_Field("Lưu Phiếu Nhập")
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private CDM_Nhap_Kho m_objMaster = new();
+    private List<CDM_Nhap_Kho_Raw_Data> v_arrDetail = new();
+    private List<CDM_Kho> v_arrKho = new();
+    private List<CDM_San_Pham> v_arrSan_Pham = new();
+
+    protected override void Init_Data() { }
+
+    protected override void Load_Data()
+    {
+        v_arrKho = CCache_Kho.List_Data();
+        v_arrSan_Pham = CCache_San_Pham.List_Data();
+
+        if (r_iAuto_ID == 0)
+        {
+            // ===== THÊM MỚI =====
+            m_objMaster = new CDM_Nhap_Kho();
+            m_objMaster.Ngay_Nhap_Kho = DateTime.Today;
+            v_arrDetail = new List<CDM_Nhap_Kho_Raw_Data>();
+        }
+        else
+        {
+            // ===== HIỆU CHỈNH =====
+            r_bUpdate = true;
+
+            CDM_Nhap_Kho_Controller v_objCtrData = new();
+            m_objMaster = v_objCtrData.FQ_107_NK_sp_sel_Get_By_ID(r_iAuto_ID);
+
+            if (m_objMaster == null)
+                m_objMaster = new CDM_Nhap_Kho();
+
+            // Clone để ghi log CRUD
+            CDM_Nhap_Kho v_objClone = new();
+            CUtility.Clone_Entity(m_objMaster, v_objClone);
+            r_objSource = v_objClone;
+        }
+    }
+
+    private void Them_Dong_Chi_Tiet()
+    {
+        v_arrDetail.Add(new CDM_Nhap_Kho_Raw_Data());
+    }
+
+    private void Xoa_Dong_Chi_Tiet(int p_iIndex)
+    {
+        if (p_iIndex >= 0 && p_iIndex < v_arrDetail.Count)
+            v_arrDetail.RemoveAt(p_iIndex);
+    }
+
+    private void Check_Data()
+    {
+        r_strError = "";
+
+        if (string.IsNullOrEmpty(m_objMaster.So_Phieu_Nhap_Kho.Trim()))
+            throw new Exception("Vui lòng nhập Số phiếu nhập.");
+        if (m_objMaster.Kho_ID == 0)
+            throw new Exception("Vui lòng chọn Kho.");
+        if (m_objMaster.Ngay_Nhap_Kho == null)
+            throw new Exception("Vui lòng chọn Ngày nhập kho.");
+
+        // Chỉ validate detail khi THÊM MỚI
+        if (r_iAuto_ID == 0)
+        {
+            if (v_arrDetail.Count == 0)
+                throw new Exception("Vui lòng thêm ít nhất 1 dòng chi tiết.");
+
+            foreach (var v_objItem in v_arrDetail)
+            {
+                if (v_objItem.San_Pham_ID == 0)
+                    throw new Exception("Vui lòng chọn Sản phẩm cho tất cả dòng chi tiết.");
+                if (v_objItem.SL_Nhap <= 0)
+                    throw new Exception("Số lượng nhập phải lớn hơn 0.");
+                if (v_objItem.Don_Gia_Nhap < 0)
+                    throw new Exception("Đơn giá nhập phải >= 0.");
+            }
+        }
+    }
+
+    // ===== ADD (THÊM MỚI) =====
+    protected override void Add_Data()
+    {
+        Check_Data();
+
+        m_objMaster.Last_Updated_By = r_strActive_User_Name;
+        m_objMaster.Last_Updated_By_Function = r_strActive_Function_Code;
+
+        CDM_Nhap_Kho_Controller v_objCtrData = new();
+        long v_iMaster_ID = v_objCtrData.FQ_107_NK_sp_ins_Insert_Master_Detail(m_objMaster, v_arrDetail);
+
+        if (v_iMaster_ID > 0)
+        {
+            m_objMaster.Auto_ID = v_iMaster_ID;
+            r_strAdd_Key = m_objMaster.So_Phieu_Nhap_Kho;
+        }
+    }
+
+    // ===== UPDATE (HIỆU CHỈNH) =====
+    protected override void Update_Data()
+    {
+        Check_Data();
+
+        m_objMaster.Last_Updated_By = r_strActive_User_Name;
+        m_objMaster.Last_Updated_By_Function = r_strActive_Function_Code;
+
+        CDM_Nhap_Kho_Controller v_objCtrData = new();
+        v_objCtrData.FQ_107_NK_sp_upd_Update(m_objMaster);
+
+        // Clone để ghi log CRUD
+        CDM_Nhap_Kho v_objClone = new();
+        CUtility.Clone_Entity(m_objMaster, v_objClone);
+        r_objDes = v_objClone;
+    }
+}

@@ -1,0 +1,167 @@
+﻿@inherits FBase;
+
+<div class="modal fade show" tabindex="-1" role="dialog" aria-hidden="true" style="display: block; padding-left: 0px; background-color: rgba(10, 10, 10, .8);">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                @if (r_iAuto_ID != 0)
+                {
+                    <h5 class="modal-title">@Get_Language_Data_Field("Hiệu chỉnh")</h5>
+                }
+                else
+                {
+                    <h5 class="modal-title">@Get_Language_Data_Field("Thêm mới")</h5>
+                }
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @onclick="@(()=> Modal_Cancel())">
+                </button>
+            </div>
+
+            @((MarkupString)r_strError)
+
+            <EditForm Model="@m_objData">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <div class="row mb-3">
+                                <div class="col-lg-11">
+                                    <label class="form-label">@Get_Language_Data_Field("Mã sản phẩm"): <span style="color:red;">*</span></label>
+                                    <input @ref="txtFocus" @bind="@m_objData.Ma_San_Pham" class="form-control">
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-lg-11">
+                                    <label class="form-label">@Get_Language_Data_Field("Tên sản phẩm"): <span style="color:red;">*</span></label>
+                                    <input @bind="@m_objData.Ten_San_Pham" class="form-control">
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-lg-11">
+                                    <label class="form-label">@Get_Language_Data_Field("Loại sản phẩm"): <span style="color:red;">*</span></label>
+                                    <TelerikComboBox Data="@v_arrLSP"
+                                                     @bind-Value="@m_objData.Loai_San_Pham_ID"
+                                                     TextField="Ten_LSP"
+                                                     ValueField="Auto_ID"
+                                                     Placeholder="Chọn loại sản phẩm..."
+                                                     Width="100%">
+                                    </TelerikComboBox>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-6">
+                            <div class="row mb-3">
+                                <div class="col-lg-11">
+                                    <label class="form-label">@Get_Language_Data_Field("Đơn vị tính"): <span style="color:red;">*</span></label>
+                                    <TelerikComboBox Data="@v_arrDVT"
+                                                     @bind-Value="@m_objData.Don_Vi_Tinh_ID"
+                                                     TextField="Ten_Don_Vi_Tinh"
+                                                     ValueField="Auto_ID"
+                                                     Placeholder="Chọn đơn vị tính..."
+                                                     Width="100%">
+                                    </TelerikComboBox>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-lg-11">
+                                    <label class="form-label">@Get_Language_Data_Field("Ghi chú"):</label>
+                                    <input @bind="@m_objData.Ghi_Chu" class="form-control">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </EditForm>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" @onclick="@Save_Data" style="margin-right: 37px;">
+                    @Get_Language_Data_Field("Lưu Thay Đổi")
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private CDM_San_Pham m_objData = new();
+    private List<CDM_Loai_San_Pham> v_arrLSP = new();
+    private List<CDM_Don_Vi_Tinh> v_arrDVT = new();
+
+    protected override void Init_Data() { }
+
+    protected override void Load_Data()
+    {
+        // Load combo data
+        v_arrLSP = CCache_Loai_San_Pham.List_Data();
+        v_arrDVT = CCache_Don_Vi_Tinh.List_Data();
+
+        // Load data edit
+        CDM_San_Pham_Controller v_objCtrData = new();
+        m_objData = v_objCtrData.FQ_103_SP_sp_sel_Get_By_ID(r_iAuto_ID);
+
+        if (m_objData == null)
+            m_objData = new CDM_San_Pham();
+        else
+        {
+            r_bUpdate = true;
+            CDM_San_Pham v_objClone = new();
+            CUtility.Clone_Entity(m_objData, v_objClone);
+            r_objSource = v_objClone;
+        }
+    }
+
+    protected override void Add_Data()
+    {
+        CDM_San_Pham_Controller v_objCtrData = new();
+        Check_Data();
+
+        m_objData.Last_Updated_By = r_strActive_User_Name;
+        m_objData.Last_Updated_By_Function = r_strActive_Function_Code;
+        m_objData.Auto_ID = r_iAuto_ID = v_objCtrData.FQ_103_SP_sp_ins_Insert(m_objData);
+
+        r_strAdd_Key = m_objData.Ma_San_Pham;
+        CCache_San_Pham.Add_Data(m_objData);
+    }
+
+    protected override void Update_Data()
+    {
+        CDM_San_Pham_Controller v_objCtrData = new();
+        Check_Data();
+
+        m_objData.Last_Updated_By = r_strActive_User_Name;
+        m_objData.Last_Updated_By_Function = r_strActive_Function_Code;
+        v_objCtrData.FQ_103_SP_sp_upd_Update(m_objData);
+
+        CDM_San_Pham v_objClone = new();
+        CUtility.Clone_Entity(m_objData, v_objClone);
+        r_objDes = v_objClone;
+
+        CCache_San_Pham.Update_Data(m_objData);
+    }
+
+    private void Check_Data()
+    {
+        r_strError = "";
+        try
+        {
+            if (string.IsNullOrEmpty(m_objData.Ma_San_Pham.Trim()))
+                throw new Exception("Mã sản phẩm không được để trống.");
+
+            if (string.IsNullOrEmpty(m_objData.Ten_San_Pham.Trim()))
+                throw new Exception("Tên sản phẩm không được để trống.");
+
+            if (m_objData.Loai_San_Pham_ID == 0)
+                throw new Exception("Vui lòng chọn loại sản phẩm.");
+
+            if (m_objData.Don_Vi_Tinh_ID == 0)
+                throw new Exception("Vui lòng chọn đơn vị tính.");
+
+            CDM_San_Pham v_objCheck = CCache_San_Pham.Get_Data_By_Ma(m_objData.Ma_San_Pham);
+            if (v_objCheck != null && v_objCheck.Auto_ID != m_objData.Auto_ID)
+                throw new Exception("Mã sản phẩm đã tồn tại.");
+        }
+        catch (Exception ex) { throw new Exception(ex.Message); }
+    }
+}

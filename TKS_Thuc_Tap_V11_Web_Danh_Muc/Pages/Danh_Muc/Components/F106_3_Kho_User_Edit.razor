@@ -1,0 +1,141 @@
+﻿@inherits FBase;
+
+<div class="modal fade show" tabindex="-1" role="dialog" aria-hidden="true" style="display: block; padding-left: 0px; background-color: rgba(10, 10, 10, .8);">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                @if (r_iAuto_ID != 0)
+                {
+                    <h5 class="modal-title">@Get_Language_Data_Field("Hiệu chỉnh")</h5>
+                }
+                else
+                {
+                    <h5 class="modal-title">@Get_Language_Data_Field("Thêm mới")</h5>
+                }
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @onclick="@(()=> Modal_Cancel())">
+                </button>
+            </div>
+
+            @((MarkupString)r_strError)
+
+            <EditForm Model="@m_objData">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <div class="row mb-3">
+                                <div class="col-lg-11">
+                                    <label class="form-label">@Get_Language_Data_Field("Mã đăng nhập"): <span style="color:red;">*</span></label>
+                                    <TelerikComboBox Data="@v_arrUser"
+                                                     @bind-Value="@m_objData.Ma_Dang_Nhap"
+                                                     TextField="Ma_Dang_Nhap"
+                                                     ValueField="Ma_Dang_Nhap"
+                                                     Placeholder="Chọn user..."
+                                                     Width="100%">
+                                    </TelerikComboBox>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-lg-11">
+                                    <label class="form-label">@Get_Language_Data_Field("Kho"): <span style="color:red;">*</span></label>
+                                    <TelerikComboBox Data="@v_arrKho"
+                                                     @bind-Value="@m_objData.Kho_ID"
+                                                     TextField="Ten_Kho"
+                                                     ValueField="Auto_ID"
+                                                     Placeholder="Chọn kho..."
+                                                     Width="100%">
+                                    </TelerikComboBox>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </EditForm>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" @onclick="@Save_Data" style="margin-right: 37px;">
+                    @Get_Language_Data_Field("Lưu Thay Đổi")
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private CDM_Kho_User m_objData = new();
+    private List<CSys_Thanh_Vien> v_arrUser = new();
+    private List<CDM_Kho> v_arrKho = new();
+
+    protected override void Init_Data() { }
+
+    protected override void Load_Data()
+    {
+        // Load combo data
+        v_arrUser = CCache_Thanh_Vien.List_Data();
+        v_arrKho = CCache_Kho.List_Data();
+
+        // Load data edit
+        CDM_Kho_User_Controller v_objCtrData = new();
+        m_objData = v_objCtrData.FQ_106_KU_sp_sel_Get_By_ID(r_iAuto_ID);
+
+        if (m_objData == null)
+            m_objData = new CDM_Kho_User();
+        else
+        {
+            r_bUpdate = true;
+            CDM_Kho_User v_objClone = new();
+            CUtility.Clone_Entity(m_objData, v_objClone);
+            r_objSource = v_objClone;
+        }
+    }
+
+    protected override void Add_Data()
+    {
+        CDM_Kho_User_Controller v_objCtrData = new();
+        Check_Data();
+
+        m_objData.Last_Updated_By = r_strActive_User_Name;
+        m_objData.Last_Updated_By_Function = r_strActive_Function_Code;
+        m_objData.Auto_ID = r_iAuto_ID = v_objCtrData.FQ_106_KU_sp_ins_Insert(m_objData);
+
+        r_strAdd_Key = m_objData.Ma_Dang_Nhap + " - Kho " + m_objData.Kho_ID;
+        CCache_Kho_User.Add_Data(m_objData);
+    }
+
+    protected override void Update_Data()
+    {
+        CDM_Kho_User_Controller v_objCtrData = new();
+        Check_Data();
+
+        m_objData.Last_Updated_By = r_strActive_User_Name;
+        m_objData.Last_Updated_By_Function = r_strActive_Function_Code;
+        v_objCtrData.FQ_106_KU_sp_upd_Update(m_objData);
+
+        CDM_Kho_User v_objClone = new();
+        CUtility.Clone_Entity(m_objData, v_objClone);
+        r_objDes = v_objClone;
+
+        CCache_Kho_User.Update_Data(m_objData);
+    }
+
+    private void Check_Data()
+    {
+        r_strError = "";
+        try
+        {
+            if (string.IsNullOrEmpty(m_objData.Ma_Dang_Nhap.Trim()))
+                throw new Exception("Vui lòng chọn Mã đăng nhập.");
+
+            if (m_objData.Kho_ID == 0)
+                throw new Exception("Vui lòng chọn Kho.");
+
+            List<CDM_Kho_User> v_arrCheck = CCache_Kho_User.Get_List_By_Ma_Dang_Nhap(m_objData.Ma_Dang_Nhap);
+            foreach (CDM_Kho_User v_objItem in v_arrCheck)
+            {
+                if (v_objItem.Kho_ID == m_objData.Kho_ID && v_objItem.Auto_ID != m_objData.Auto_ID)
+                    throw new Exception("User này đã được phân quyền cho kho này rồi.");
+            }
+        }
+        catch (Exception ex) { throw new Exception(ex.Message); }
+    }
+}
